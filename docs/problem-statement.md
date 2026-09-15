@@ -1,6 +1,6 @@
 # Problem Statement
 
-## GridPulse AI — Power Grid Failure Prediction & Monitoring System
+## GridSentinel AI — Power Grid Asset Monitoring & Failure Prediction System
 
 ---
 
@@ -42,9 +42,13 @@ Operational Technology (OT) security in the power sector is a growing regulatory
 - **Contractors and temporary staff** have the same view as senior engineers
 - **Audit trails are absent** — there is no record of who saw which alert, who dispatched a technician, or who changed a maintenance status
 
-### 4. Why Now
+### 4. Lack of Geospatial Situational Awareness
 
-AI hardware and software costs have dropped dramatically. Random Forest models that required expensive compute clusters in 2010 run in milliseconds on a laptop in 2025. Physics-informed machine learning — encoding domain knowledge (IEC standards, thermal equations) directly into feature engineering — makes it possible to build accurate predictive models from realistic-sized datasets without years of labelled failure data.
+Grid operators managing hundreds of assets across wide geographic areas have no single view showing *where* their highest-risk assets are relative to incoming weather fronts, storm cells, or flood zones. A transformer exposed to a hurricane-force wind event while already running at 85% load is exponentially more likely to fail — yet most monitoring dashboards have no geospatial component at all.
+
+### 5. Why Now
+
+AI hardware and software costs have dropped dramatically. Random Forest models that required expensive compute clusters in 2010 run in milliseconds on a laptop in 2025. Physics-informed machine learning — encoding domain knowledge (IEC standards, thermal equations) directly into feature engineering — makes it possible to build accurate predictive models from realistic-sized datasets without years of labelled failure data. Simultaneously, react-leaflet and free-tier weather APIs make it viable to build a live geospatial digital twin at college-project cost.
 
 ---
 
@@ -56,7 +60,7 @@ AI hardware and software costs have dropped dramatically. Random Forest models t
 | Manual SCADA dashboards | Cannot correlate 5+ sensor streams across hundreds of assets simultaneously |
 | Enterprise SCADA vendors (GE, ABB, Siemens) | Cost $500K–$5M per deployment; inaccessible for colleges, small utilities, or proof-of-concept work |
 | Generic ML platforms | Require data scientists, training pipelines, and do not encode electrical engineering domain knowledge |
-| Existing monitoring tools | No RBAC, no 2FA, no maintenance workflow integration |
+| Existing monitoring tools | No RBAC, no geospatial map, no closed-loop maintenance workflow, no crew planning integration |
 
 ---
 

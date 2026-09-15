@@ -1,22 +1,18 @@
-# Demo Screenshots
+# Screenshots
 
-Place application screenshots in this directory, named sequentially:
+Place at least **3** screenshots of the running application in this directory.
+
+Name them sequentially so judges can find them easily:
 
 ```
-01-login-page.png              — Login page with GridPulse AI branding
-02-signup-role-selector.png    — Signup page showing role selection cards
-03-2fa-setup-qr.png           — 2FA setup modal with QR code
-04-dashboard-overview.png     — Main dashboard with asset risk cards
-05-ai-prediction-studio.png   — AI Prediction Studio with sensor inputs + result
-06-asset-monitoring.png       — Asset monitoring with telemetry charts
-07-maintenance-orders.png     — Maintenance work orders list
-08-admin-user-panel.png       — Admin panel user management table
-09-risk-analysis.png          — Risk analysis severity ranking matrix
+01-login-page.png          ← Login page with role cards and Instant In buttons
+02-dashboard.png           ← Main operational command dashboard with fleet KPIs
+03-asset-monitoring.png    ← Asset registry with health scores and telemetry
+04-ai-prediction.png       ← AI failure prediction with sensor inputs and result
+05-project-map.png         ← react-leaflet digital twin map with weather overlays
+06-maintenance.png         ← Maintenance work order queue
+07-crew-planning.png       ← Crew planning module with availability board
+08-asset-detail.png        ← Per-asset deep-dive with risk contributor breakdown
 ```
 
-## Screenshot Requirements (per hackathon guide)
-
-- At least 3 screenshots required
-- Show the application actually running
-- Name files sequentially (01-, 02-, 03-, …)
-- Accepted formats: .png, .jpg, .gif, .webp
+You only need a minimum of 3. Add as many as useful to show the full scope of the application.
