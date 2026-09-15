@@ -1,4 +1,4 @@
-# Demo Screenshots
+# Screenshots
 
 High-resolution application screenshots for **GridSentinel AI**:
 
@@ -10,3 +10,5 @@ High-resolution application screenshots for **GridSentinel AI**:
 | 04 | [`04-ai-remediation-plan.png`](04-ai-remediation-plan.png) | AI Remediation Plan with 99% failure risk breakdown and recommended actions |
 | 05 | [`05-add-asset-modal.png`](05-add-asset-modal.png) | Add New Asset multi-step modal with sensor thresholds and telemetry binding |
 | 06 | [`06-asset-registry-csv-export.png`](06-asset-registry-csv-export.png) | Asset Registry fleet table with verified real-time CSV spreadsheet export |
+
+All screenshots show the application running in production mode.

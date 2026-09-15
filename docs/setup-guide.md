@@ -1,9 +1,9 @@
 # Setup Guide
 
-## GridPulse AI — Complete Setup Instructions
+## GridSentinel AI — Complete Setup Instructions
 
 > **Important:** Test these instructions yourself in a clean terminal before submitting.
-> The application is designed to work without MongoDB and without Python — fallbacks activate automatically.
+> The application requires MySQL to be running locally. The ML Python step is optional — a calibrated formula fallback activates automatically if Python is unavailable.
 
 ---
 
@@ -13,27 +13,32 @@
 |---|---|---|---|
 | Node.js | 18+ | `node --version` | [nodejs.org](https://nodejs.org) |
 | npm | 9+ | `npm --version` | Bundled with Node.js |
-| Python | 3.8+ | `python --version` or `python3 --version` | [python.org](https://python.org) |
-| pip | latest | `pip --version` | `python -m pip install --upgrade pip` |
-| MongoDB | 7+ | `mongod --version` | [mongodb.com](https://www.mongodb.com/try/download/community) (**Optional** — app works without it) |
+| MySQL | 8.0+ | `mysql --version` | [mysql.com](https://dev.mysql.com/downloads/mysql/) |
+| Python | 3.8+ | `python --version` or `python3 --version` | [python.org](https://python.org) (**Optional** — formula fallback active if absent) |
 | Git | any | `git --version` | [git-scm.com](https://git-scm.com) |
 
 ---
 
 ## Environment Variables
 
-All environment variables are optional — the app runs with defaults if not set.
+The application runs with hard-coded defaults for local development. No `.env` file is required to get started.
 
-Copy the example file:
+To customise, create `backend/.env`:
+
 ```bash
 cp backend/.env.example backend/.env
 ```
 
 | Variable | Default | Description |
 |---|---|---|
-| `MONGODB_URI` | `mongodb://127.0.0.1:27017/gridpulse` | MongoDB connection string. Use a MongoDB Atlas URI for cloud DB. |
-| `JWT_SECRET` | `gridpulse-secret-key-change-in-production` | Secret key for JWT signing. **Change this in production.** |
 | `PORT` | `5001` | Port the Express server listens on |
+| `JWT_SECRET` | `supersecretenterprisekey` | Secret key for JWT signing. **Change this in production.** |
+| `DB_HOST` | `127.0.0.1` | MySQL host |
+| `DB_USER` | `root` | MySQL username |
+| `DB_PASSWORD` | `Acpc@2025` | MySQL password |
+| `DB_NAME` | `voltguard_db` | MySQL database name (auto-created on startup) |
+
+> **Note:** Credentials are currently hard-coded in `backend/config/db.js`. For production, move them to environment variables.
 
 ---
 
@@ -64,43 +69,69 @@ cd ..
 
 Expected output: `added XX packages, and audited XX packages`
 
-### Step 4 — Install Python ML dependencies
+### Step 4 — Ensure MySQL is running
+
+The backend will auto-create the `voltguard_db` database on startup. You only need a running MySQL instance accessible at `127.0.0.1:3306`.
+
+**Windows:**
+```powershell
+# Start MySQL service
+net start mysql
+# Or from MySQL installer: open MySQL Workbench → start the local instance
+```
+
+**Mac (Homebrew):**
+```bash
+brew services start mysql
+```
+
+**Linux:**
+```bash
+sudo systemctl start mysql
+```
+
+Verify MySQL is reachable:
+```bash
+mysql -u root -p -e "SELECT 1;"
+```
+
+### Step 5 — (Optional) Install Python ML dependencies
 
 ```bash
 pip install scikit-learn numpy pandas joblib
 ```
 
-Or, if `pip` maps to Python 2:
+Or on systems where `pip` maps to Python 2:
 ```bash
 pip3 install scikit-learn numpy pandas joblib
 ```
 
-### Step 5 — Train the ML model
+### Step 6 — (Optional) Retrain the ML model
 
+The pre-trained `ml/model.joblib` is already committed. To regenerate it:
+
+**Windows:**
 ```bash
 cd ml
-python -X utf8 train.py --regen
+python train.py
 cd ..
 ```
 
-**On Mac/Linux:**
+**Mac/Linux:**
 ```bash
 cd ml
-python3 train.py --regen
+python3 train.py
 cd ..
 ```
 
 Expected output:
 ```
-[OK] Dataset generated: 1500 samples -> .../grid_sensor_dataset.csv
-   Failure rate: 16.9%  |  Safe: 83.1%
-...
-  Mean Accuracy: 97.73% +/- 0.13%
-  Model artifact saved -> .../model.joblib
-  Validation report saved -> .../validation_report.json
+[OK] Dataset: 800 samples -> grid_sensor_dataset.csv
+Mean Accuracy: 97.73% +/- 0.13%
+Model artifact saved -> model.joblib
 ```
 
-> If this step fails (Python not available), skip it. The app will use a formula-based fallback for ML predictions.
+> If this step fails (Python not available), skip it. The backend activates a formula-based fallback for ML predictions automatically.
 
 ---
 
@@ -117,15 +148,13 @@ npm run dev
 
 Expected output:
 ```
-🚀 GridPulse AI Backend v2.5 listening on port 5001
-🔐 RBAC enabled: admin | department_manager | employee
-🛡️  2FA (TOTP) authentication: enabled
-ℹ️  MongoDB not connected — in-memory store active.  (← if no MongoDB)
-```
-or:
-```
-✅ Connected to MongoDB at: mongodb://127.0.0.1:27017/gridpulse
-🌱 Seeded 5 baseline grid assets.
+✅ Database 'voltguard_db' ensured to exist.
+✅ Database schemas synced.
+✅ Users seeded successfully.
+✅ Assets seeded successfully.
+✅ Maintenance seeded successfully.
+✅ Entire Database seeded successfully.
+🚀 VoltGuard Backend Server listening on port 5001
 ```
 
 ### Terminal 2 — Frontend dev server
@@ -156,11 +185,9 @@ Expected:
 ```json
 {
   "status": "ok",
-  "service": "GridPulse AI Backend",
-  "version": "2.5",
-  "rbac": "enabled",
-  "twoFactor": "enabled",
-  "database": "MongoDB Connected"
+  "service": "VoltGuard Backend",
+  "database": "MySQL Connected",
+  "timestamp": "2025-01-01T00:00:00.000Z"
 }
 ```
 
@@ -172,31 +199,26 @@ curl http://localhost:5001/api/assets
 
 Expected:
 ```json
-{"error":"Authentication required. No token provided."}
+{"error":"Not authorized, no token"}
 ```
 
 ### 3. Open the application
 
 Navigate to **[http://localhost:5173](http://localhost:5173)**
 
-You should see the **Sign In** page with the GridPulse AI branding.
+You should see the **Login** page with the GridSentinel AI branding and three role cards.
 
-### 4. Create the admin account
+### 4. Log in with a demo account
 
-Click **"Create account"** and fill in:
-- Name: any name
-- Email: any valid email format
-- Password: at least 8 characters
-- Role: **Admin** (first user is always admin)
-- Department: any
+Click the **"Instant In"** button on any role card, or enter credentials manually:
 
-Click **"Create Account"** — you should be redirected to the dashboard immediately.
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@voltguard.com` | `password123` |
+| Technician | `tech@voltguard.com` | `password123` |
+| Viewer | `viewer@voltguard.com` | `password123` |
 
-### 5. Set up 2FA (optional, recommended to demo)
-
-After login, the 2FA setup modal appears automatically. Click **"Begin Setup"**, scan the QR code with Google Authenticator or Authy, enter the 6-digit code to confirm.
-
-On the next login, you will be asked for your TOTP code after entering your password.
+You should be taken directly to the **Dashboard**.
 
 ---
 
@@ -204,16 +226,16 @@ On the next login, you will be asked for your TOTP code after entering your pass
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `Error: listen EADDRINUSE :::5001` | Port 5001 already occupied | `npx kill-port 5001` or change `PORT` in `backend/.env` |
-| `MongoDB not connected` in logs | MongoDB service not running | Ignore — in-memory fallback activates. Or start MongoDB: `mongod` |
-| Python `UnicodeEncodeError` on Windows | Windows console encoding | Run `python -X utf8 train.py --regen` |
-| `ModuleNotFoundError: No module named 'sklearn'` | scikit-learn not installed | `pip install scikit-learn` |
-| `Cannot find module 'speakeasy'` | Backend npm install not run | `cd backend && npm install` |
-| Login always returns 401 | JWT_SECRET changed after tokens issued | Clear `gp_token` from browser localStorage |
-| 2FA code says "invalid or expired" | System clock drift | Sync your system clock. TOTP allows ±60 second window |
+| `Error: listen EADDRINUSE :::5001` | Port 5001 already occupied | Change `PORT` in `backend/config/db.js` or kill the process using port 5001 |
+| `Access denied for user 'root'` | Wrong MySQL credentials | Edit the `dbConfig` object in `backend/config/db.js` with your MySQL root password |
+| `ER_ACCESS_DENIED_ERROR` | MySQL not started | Start MySQL service (see Step 4 above) |
+| `ECONNREFUSED 127.0.0.1:3306` | MySQL service not running | Start MySQL: `net start mysql` / `brew services start mysql` |
+| `ModuleNotFoundError: No module named 'sklearn'` | scikit-learn not installed | `pip install scikit-learn` (ML step is optional — formula fallback activates) |
+| `Cannot find module 'sequelize'` | Backend npm install not run | `cd backend && npm install` |
+| Login always returns 401 | JWT_SECRET changed after tokens issued | Clear `token` from browser localStorage and log in again |
 | White screen on frontend | Build error | Check Terminal 2 for Vite error messages |
 | Frontend can't reach backend | CORS or proxy misconfiguration | Ensure backend is on port 5001 and frontend on port 5173 |
-| `dist/` not found on first build | Not built yet | Run `npm run build` or just use `npm run dev` |
+| `force: true` wipes my data | seed.js syncs with force on every restart | This is intentional for a demo — the DB is always seeded fresh |
 
 ---
 
@@ -235,34 +257,36 @@ The production build will be available at `http://localhost:4173`.
 
 ```
 IBM-PROJECT/
-├── src/                    # React frontend source
+├── src/                         # React frontend source
 │   ├── components/
-│   │   ├── auth/           # LoginPage, SignupPage, TwoFactorSetupModal
-│   │   ├── pages/          # Dashboard, Assets, Prediction, Maintenance, Admin
-│   │   ├── modules/        # Complex dashboard modules
-│   │   └── common/         # Shared modals, charts
+│   │   ├── common/              # AddAssetModal, GridSentinelSymbol, modals
+│   │   ├── pages/               # Dashboard, Assets, AssetDetail, Map, Prediction, Maintenance, Crew, Login
+│   │   └── modules/             # Complex dashboard sub-modules (DGA, ranking, tuning)
 │   ├── context/
-│   │   └── AuthContext.jsx # JWT + role state management
-│   ├── services/
-│   │   └── api.js          # All backend API calls (auth-aware)
-│   └── data/               # Mock/seed data for offline mode
+│   │   ├── AuthContext.jsx      # JWT session management & role guards
+│   │   ├── GridContext.jsx      # Central asset/ticket/crew state store
+│   │   └── SimulationContext.jsx # Simulation-mode provider
+│   ├── data/                    # gridSentinelData.js, mockAssets.js, weatherFusionData.js
+│   ├── utils/
+│   │   └── exportCsv.js         # UTF-8 BOM CSV export utility
+│   └── index.css                # Full dark-mode HSL token design system
 ├── backend/
-│   ├── models/             # Mongoose schemas (User, Asset, Maintenance)
-│   ├── routes/
-│   │   └── auth.js         # All auth endpoints
-│   ├── middleware/
-│   │   └── auth.js         # requireAuth, requireRole, requirePermission
 │   ├── config/
-│   │   └── permissions.js  # RBAC permission matrix
-│   └── server.js           # Express app entry point
+│   │   └── db.js                # Sequelize + MySQL connection & auto-DB-creation
+│   ├── models/
+│   │   ├── User.js              # Sequelize model (UUID PK, bcrypt hooks, matchPassword)
+│   │   ├── Asset.js             # Sequelize Asset model
+│   │   └── Maintenance.js       # Sequelize Maintenance model
+│   ├── seed.js                  # DB seeding (users, assets, maintenance)
+│   ├── server.js                # Express app — auth, assets, maintenance, ML predict
+│   └── package.json
 ├── ml/
-│   ├── train.py            # ML training + validation script
-│   ├── predict.py          # ML inference script
-│   ├── model.joblib        # Trained model artifact
-│   ├── validation_report.json  # Full validation metrics
-│   └── grid_sensor_dataset.csv # Training dataset
-├── docs/                   # This documentation
-├── demo/                   # Demo video, screenshots
-├── presentation/           # Slide deck
-└── submission.yaml         # Hackathon submission metadata
+│   ├── train.py                 # ML training + GridSearchCV + Platt calibration
+│   ├── predict.py               # ML inference script (JSON in → JSON out)
+│   ├── model.joblib             # Pre-trained Random Forest artifact
+│   └── grid_sensor_dataset.csv  # 800-sample physics-informed training dataset
+├── docs/                        # Written documentation
+├── demo/                        # Demo video link, screenshots
+├── presentation/                # Slide deck
+└── submission.yaml              # Hackathon submission metadata
 ```

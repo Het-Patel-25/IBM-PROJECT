@@ -1,6 +1,6 @@
 # Architecture
 
-## GridPulse AI — Technical Architecture
+## GridSentinel AI — Technical Architecture
 
 ---
 
@@ -8,29 +8,27 @@
 
 ```mermaid
 graph TD
-    A[User Browser\nReact 19 + Vite] -->|HTTPS / Vite Proxy /api| B[Express REST API\nNode.js :5001]
-    
-    B -->|POST /api/auth/signup\nPOST /api/auth/login| C[Auth Routes\nJWT + bcrypt]
-    B -->|POST /api/auth/verify-2fa\nGET /api/auth/setup-2fa| D[2FA Routes\nspeakeasy TOTP]
-    B -->|GET /api/assets\nrequireAuth + applyAssetScope| E[Asset Routes\nRole-scoped]
-    B -->|GET /api/maintenance\nPOST/PATCH with requirePermission| F[Maintenance Routes\nPermission-gated]
-    B -->|POST /api/predict\nrequirePermission canRunPrediction| G[Predict Route\nAdmin + Manager only]
-    B -->|GET /api/auth/users\nrequireRole admin| H[User Mgmt Routes\nAdmin only]
+    A[User Browser\nReact 19 + Vite] -->|HTTP / Vite Proxy /api| B[Express REST API\nNode.js :5001]
 
-    C --> I[(MongoDB\nMongoose)]
-    D --> I
-    E --> I
-    F --> I
-    H --> I
+    B -->|POST /api/auth/login\nJWT sign| C[Auth Handler\njsonwebtoken + bcrypt]
+    B -->|GET POST /api/assets\nprotect middleware| D[Asset Routes\nSequelize ORM]
+    B -->|GET POST PATCH /api/maintenance\nprotect middleware| E[Maintenance Routes\nSequelize ORM]
+    B -->|POST /api/predict\nprotect middleware| F[Predict Route\nML Bridge]
 
-    I -->|Connection fails| J[In-Memory Store\nFallback auto-activates]
+    C --> G[(MySQL 8\nvoltguard_db)]
+    D --> G
+    E --> G
 
-    G -->|child_process.spawn| K[Python predict.py\nML Inference]
-    K --> L[model.joblib\nRF Calibrated Artifact]
-    K -->|model load fails| M[Formula Fallback\nCalibrated scoring]
+    G -->|auto-created on startup| H[config/db.js\ninitializeDatabase]
+    H -->|force sync + seed| I[seed.js\n3 users · 5 assets · 2 tickets]
+
+    F -->|child_process.spawn| J[Python predict.py\nML Inference]
+    J --> K[model.joblib\nRF Calibrated Artifact]
+    J -->|parse error / exit ≠ 0| L[Formula Fallback\nCalibrated JS scoring]
 
     A -->|AuthContext stores JWT\nin localStorage| A
-    A -->|canAccessPage role check\nfilters nav items| A
+    A -->|GridContext\nassets/tickets/crews| M[react-leaflet Map\nOpenWeatherMap tiles]
+    A -->|SimulationContext\nlocal state| N[Simulation Mode\nmockAssets / CREW_UNITS]
 ```
 
 ---
@@ -40,17 +38,21 @@ graph TD
 | Component | Technology | Responsibility |
 |---|---|---|
 | **React Frontend** | React 19, Vite 8.3 | SPA UI, role-gated routing, auth state management |
-| **AuthContext** | React Context API | JWT token storage, login/signup/2FA flows, `can()` / `canAccessPage()` helpers |
-| **Express API** | Node.js 18+, Express 4.21 | REST endpoints, middleware chain, Python process spawning |
-| **Auth Middleware** | jsonwebtoken 9 | `requireAuth`, `requireRole`, `requirePermission`, `applyAssetScope` |
-| **User Model** | Mongoose 8.9, bcryptjs 3 | User schema with hashed passwords, 2FA secrets, role, department |
-| **2FA System** | speakeasy 2.0, qrcode 1.5 | TOTP secret generation, QR code creation, OTP verification |
-| **MongoDB** | MongoDB 7+, Mongoose 8.9 | Persistent storage for users, assets, maintenance records |
-| **In-Memory Fallback** | Plain JavaScript arrays | Zero-dependency fallback when MongoDB is unavailable |
-| **ML Inference** | Python 3.8+, joblib | Loads `model.joblib`, applies feature engineering, returns `predict_proba` |
-| **Random Forest Model** | scikit-learn, Platt calibration | 9-feature calibrated classifier, 97.73% CV accuracy |
-| **Feature Engineering** | Python (train.py + predict.py) | Computes `thermal_load_idx`, `mech_health`, `moisture_age`, `overload_flag` |
-| **Formula Fallback** | JavaScript (server.js) | Physics-calibrated scoring when Python is unavailable |
+| **AuthContext** | React Context API | JWT token storage, login flow, `user.role` guard helpers |
+| **GridContext** | React Context API | Centralised asset/ticket/crew state, localStorage persistence, derived AI metrics |
+| **SimulationContext** | React Context API | Simulation-mode provider reading from `mockAssets.js` and `CREW_UNITS` |
+| **react-leaflet Map** | react-leaflet 5, Leaflet 1.9 | Geospatial digital-twin map, OpenWeatherMap tile overlays, node telemetry drawer |
+| **Express API** | Node.js 18+, Express 4.21 | REST endpoints, JWT `protect` middleware, Python process spawning |
+| **JWT Middleware** | jsonwebtoken 9 | `protect` — Bearer token extraction, verify, `req.user` injection |
+| **User Model** | Sequelize 6, bcrypt 6 | UUID PK, email unique, role enum, `beforeCreate`/`beforeUpdate` hash hooks, `matchPassword()` |
+| **Asset Model** | Sequelize 6 | UUID PK, sensor fields (temperature, load, vibration, humidity, age), riskScore, status |
+| **Maintenance Model** | Sequelize 6 | UUID PK, assetId FK, problem, priority, recommendation, technician, status |
+| **config/db.js** | Sequelize + mysql2 | Auto-creates `voltguard_db` if missing, exports `sequelize` instance |
+| **seed.js** | Node.js | Idempotent DB init — syncs schemas (force), seeds 3 users + 5 assets + 2 maintenance records |
+| **ML Inference** | Python 3.8+, joblib | Loads `model.joblib`, applies feature engineering, returns `predict_proba` as JSON stdout |
+| **Random Forest Model** | scikit-learn, Platt calibration | 5-feature calibrated classifier, 97.73% CV accuracy, ROC-AUC 0.9962 |
+| **Formula Fallback** | JavaScript (server.js) | Physics-calibrated scoring when Python is unavailable — identical risk thresholds |
+| **exportCsv.js** | Browser JS | UTF-8 BOM CSV generation for the asset registry — Excel/Python/GIS compatible |
 
 ---
 
@@ -59,78 +61,73 @@ graph TD
 ### Authentication Flow
 
 ```
-Browser                Express API              MongoDB
-  │                        │                       │
-  ├─POST /api/auth/login──►│                       │
-  │   {email, password}    │                       │
-  │                        ├─findOne({email})──────►│
-  │                        │◄──────user document───│
-  │                        │                       │
-  │                        ├─bcrypt.compare()       │
-  │                        │ (password hash check)  │
-  │                        │                       │
-  │  [If 2FA enabled]      │                       │
-  │◄─{requiresTwoFactor:   │                       │
-  │   true, preAuthToken}──│                       │
-  │                        │                       │
-  ├─POST /api/auth/         │                       │
-  │  verify-2fa────────────►│                       │
-  │   {preAuthToken, code} │                       │
-  │                        ├─speakeasy.totp.verify()│
-  │                        │ (TOTP window: ±2 steps)│
-  │◄─{token, user}─────────│                       │
-  │  (8-hour JWT)          │                       │
+Browser                Express API              MySQL (voltguard_db)
+  │                        │                           │
+  ├─POST /api/auth/login──►│                           │
+  │  {email, password}     │                           │
+  │                        ├─User.findOne({email})─────►│
+  │                        │◄──── user row ────────────│
+  │                        │                           │
+  │                        ├─user.matchPassword()      │
+  │                        │  bcrypt.compare()         │
+  │                        │                           │
+  │◄─{token, user}─────────│                           │
+  │  (JWT — 1-day expiry)  │                           │
+  │                        │                           │
+  │  [subsequent requests] │                           │
+  ├─GET /api/assets────────►│                           │
+  │  Authorization: Bearer │                           │
+  │                        ├─protect()                 │
+  │                        │  jwt.verify(token)        │
+  │                        │  → req.user = {id, role}  │
+  │                        ├─Asset.findAll()────────────►│
+  │◄─[assets array]────────│◄────── rows ──────────────│
 ```
 
 ### ML Prediction Flow
 
 ```
 React UI               Express API              Python Process
-  │                        │                       │
-  ├─POST /api/predict──────►│                       │
-  │  {temp, load, vib,     │                       │
-  │   hum, age}            │                       │
-  │  Authorization: Bearer │                       │
-  │                        ├─requireAuth()         │
-  │                        ├─requirePermission(    │
-  │                        │  'canRunPrediction')  │
-  │                        │ [Employee → 403]      │
-  │                        │                       │
-  │                        ├─spawn('python',       │
-  │                        │  ['predict.py',       │
-  │                        │   JSON.stringify(…)]) │
-  │                        │                       ├─joblib.load(model.joblib)
-  │                        │                       ├─build_feature_vector()
-  │                        │                       │  +thermal_load_idx
-  │                        │                       │  +mech_health
-  │                        │                       │  +moisture_age
-  │                        │                       │  +overload_flag
-  │                        │                       ├─model.predict_proba()
-  │                        │                       ├─get_diagnostics()
-  │                        │◄─JSON stdout──────────│
-  │◄─{failureProbability,  │                       │
-  │   riskCategory,        │                       │
-  │   recommendation,      │                       │
-  │   reasons}─────────────│                       │
+  │                        │                           │
+  ├─POST /api/predict──────►│                           │
+  │  {temp, load, vib,     │                           │
+  │   hum, age}            │                           │
+  │  Authorization: Bearer │                           │
+  │                        ├─protect()                 │
+  │                        │  jwt.verify() → req.user  │
+  │                        │                           │
+  │                        ├─spawn(pythonBin,          │
+  │                        │  ['predict.py', payload]) │
+  │                        │                           ├─joblib.load(model.joblib)
+  │                        │                           ├─build_feature_vector()
+  │                        │                           │  thermal_load_idx
+  │                        │                           │  mech_health
+  │                        │                           │  moisture_age
+  │                        │                           │  overload_flag
+  │                        │                           ├─model.predict_proba()
+  │                        │◄─JSON stdout──────────────│
+  │◄─{failureProbability,  │                           │
+  │   riskCategory,        │  [if Python fails]        │
+  │   possibleFailure,     ├─formula fallback scorer   │
+  │   recommendation}──────│                           │
 ```
 
-### RBAC Asset Scoping Flow
+### Database Startup & Seeding Flow
 
 ```
-Employee Login                API Call                MongoDB Query
-  │                              │                        │
-  ├─JWT contains {role:'employee'}│                        │
-  │                              │                        │
-  ├─GET /api/assets──────────────►│                        │
-  │  Authorization: Bearer …     │                        │
-  │                              ├─requireAuth()          │
-  │                              ├─applyAssetScope()      │
-  │                              │  role='employee'       │
-  │                              │  → filter = {_id: {   │
-  │                              │    $in: assignedAssets}}│
-  │                              │                        │
-  │                              ├─Asset.find(filter)─────►│
-  │◄─[only assigned assets]──────│◄──filtered results─────│
+npm run dev (backend)
+  │
+  ├─ server.js: await seedDatabase()
+  │
+  ├─ seed.js → initializeDatabase()
+  │    └─ mysql2 CREATE DATABASE IF NOT EXISTS voltguard_db
+  │
+  ├─ sequelize.sync({ force: true })
+  │    └─ DROP + CREATE: Users, Assets, Maintenances
+  │
+  ├─ User.create(×3)   → admin / technician / viewer
+  ├─ Asset.create(×5)  → transformer + feeder fleet
+  └─ Maintenance.create(×2) → Critical + High tickets
 ```
 
 ---
@@ -139,14 +136,12 @@ Employee Login                API Call                MongoDB Query
 
 | Concern | Implementation |
 |---|---|
-| Password storage | bcrypt, cost factor 12 (~250ms hash time — resistant to brute force) |
-| Session tokens | HS256 JWT, 8-hour expiry, secret configurable via `JWT_SECRET` env var |
-| 2FA pre-auth tokens | Short-lived (5 minutes), single-use pattern, `step: 'pre-2fa'` claim |
-| TOTP window | `window: 2` (±2 × 30-second steps = ±60 seconds clock skew tolerance) |
-| Role enforcement | Both API middleware AND React UI — defense in depth |
-| Asset scoping | Employees see only `assignedAssets` array from their user document — enforced in MongoDB query |
-| Sensitive fields | `twoFactorSecret` and `twoFactorTempSecret` stripped from all JSON responses via Mongoose transform |
-| .env | `.env` is in `.gitignore` — real secrets never committed |
+| Password storage | bcrypt, salt rounds 10 (~100ms hash time) via Sequelize `beforeCreate` / `beforeUpdate` hooks |
+| Session tokens | HS256 JWT, 24-hour expiry; secret configurable via `JWT_SECRET` env var (default hardcoded for dev) |
+| Protected routes | `protect` middleware — all `/api/assets`, `/api/maintenance`, `/api/predict` endpoints require valid Bearer token |
+| Role enforcement | React UI nav guards + backend JWT role claim — defense in depth |
+| Credentials | DB credentials in `backend/config/db.js` — should be moved to env vars for production |
+| `.env` | `.env` in `.gitignore` — no real secrets committed |
 
 ---
 
@@ -154,9 +149,10 @@ Employee Login                API Call                MongoDB Query
 
 The current architecture is a monolith suitable for a hackathon / college project. For production at scale:
 
-- **Horizontally scale Express** behind a load balancer; use Redis for shared session state
-- **Replace in-memory fallback** with MongoDB Atlas with replica sets
-- **Add MQTT/Kafka broker** for real-time SCADA sensor ingestion
+- **Horizontally scale Express** behind a load balancer; use Redis for shared JWT session cache
+- **Move DB credentials** to environment variables / secrets manager (AWS SSM, HashiCorp Vault)
+- **Replace `force: true` sync** with proper Sequelize migrations for zero-downtime schema changes
+- **Add MQTT/Kafka broker** for real-time SCADA sensor ingestion (replacing physics-simulated data)
 - **Move ML inference** to a dedicated Python microservice (FastAPI) to avoid `child_process.spawn` overhead
 - **Add HTTPS** via nginx reverse proxy with Let's Encrypt
 - **Implement refresh token rotation** for longer-lived sessions without security compromise

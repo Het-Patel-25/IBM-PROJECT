@@ -2,16 +2,16 @@ team:
   name: "Team Syntax"
   track: "AI"
   lead:
-    name: "Krish kaneria"
+    name: "Krish Kaneria"
     email: "krishkaneria9@gmail.com"
   members:
-    - name: "Krish kaneria"
+    - name: "Krish Kaneria"
       email: "krishkaneria9@gmail.com"
     - name: "Het Patel"
       email: "het.patel@gridpulse.ai"
 
 submission:
-  title: "GridPulse AI — Power Grid Failure Prediction & Monitoring System"
+  title: "GridSentinel AI — Power Grid Asset Monitoring & Failure Prediction System"
   problem_statement: >
     Electrical utility companies operate hundreds of transformers and feeder assets
     across wide geographic areas. Failures are rarely sudden — they develop through
@@ -20,59 +20,71 @@ submission:
     with emergency repairs costing 3-5x more than planned work. Simultaneously,
     sensitive operational data (risk predictions, failure probabilities) is accessible
     to all staff regardless of role, creating security and compliance risks. No existing
-    college-level tool combines AI-driven failure prediction with enterprise-grade RBAC
-    and two-factor authentication for critical infrastructure.
+    college-level tool combines AI-driven failure prediction with geospatial digital-twin
+    mapping, role-based access control, and a full closed-loop maintenance workflow for
+    critical infrastructure.
   solution_summary: >
-    GridPulse AI is a full-stack AI-powered power grid monitoring and predictive
+    GridSentinel AI is a full-stack AI-powered power grid monitoring and predictive
     maintenance platform. It uses a calibrated Random Forest ML model trained on
     physics-informed telemetry data (IEC 60076 / ISO 10816 standards) to predict
     asset failures before they occur, achieving 97.73% cross-validated accuracy and
-    ROC-AUC of 0.9962. The platform enforces three-tier role-based access control
-    (Admin, Department Manager, Field Employee) with JWT authentication and TOTP
-    two-factor authentication via speakeasy, ensuring only authorised personnel access
-    critical grid operational data. IBM Bob AI was used throughout development for
-    architecture design, RBAC implementation, ML optimisation, and code generation.
+    ROC-AUC of 0.9962. The platform persists all data in a MySQL database via Sequelize
+    ORM, enforces three-tier role-based access control (Admin, Technician, Viewer) with
+    JWT authentication, and provides a live geospatial digital-twin map powered by
+    react-leaflet with real-time OpenWeatherMap radar overlays. IBM Bob AI was used
+    throughout development for architecture design, RBAC implementation, database
+    migration, ML optimisation, map integration, and code generation.
   key_features:
-    - "AI Failure Prediction Studio: 5 sensor inputs → failure probability, risk category, recommended action"
-    - "Calibrated Random Forest ML: 97.73% CV accuracy, ROC-AUC 0.9962, physics-informed feature engineering"
-    - "3-tier RBAC: Admin / Department Manager / Employee, enforced at API middleware and React UI level"
-    - "JWT + TOTP two-factor authentication (speakeasy, Google Authenticator compatible, QR code in-app setup)"
-    - "Admin user management panel: role assignment, department scoping, account activation, 2FA status"
-    - "Real-time asset telemetry dashboards: DGA, PRPD scatter, FFT harmonics, thermal curve modelling"
-    - "Maintenance work order lifecycle: AI-generated tickets, technician assignment, status tracking"
-    - "Resilient architecture: in-memory fallback (no MongoDB required), formula fallback (no Python required)"
+    - "AI Failure Prediction: 5 sensor inputs → failure probability, risk category, recommended action (Random Forest + formula fallback)"
+    - "Calibrated Random Forest ML: 97.73% CV accuracy, ROC-AUC 0.9962, physics-informed feature engineering (IEC 60076 / ISO 10816)"
+    - "Geospatial Digital Twin Map: react-leaflet with live OpenWeatherMap precipitation/temperature/wind radar overlays and node telemetry drawer"
+    - "Asset Detail View: per-asset deep-dive with health score, failure probability gauge, risk contributor breakdown, and inline incident reporting"
+    - "Crew Planning Module: crew availability board, one-click dispatch assignment, unassigned task queue management"
+    - "Add Asset Modal: in-app registration of new grid assets directly into the live MySQL-backed registry"
+    - "3-tier RBAC: Admin / Technician / Viewer enforced at JWT middleware and React UI level"
+    - "MySQL + Sequelize backend: auto-creates voltguard_db on startup, seeds users/assets/maintenance on first run"
+    - "1-Click CSV Export: UTF-8 BOM asset registry export compatible with Excel, Python, and external SCADA/GIS tools"
 
   ibm_bob_integration: >
     IBM Bob AI was the primary development assistant throughout the entire project.
-    Bob was used for: full RBAC system architecture and implementation (User model,
-    JWT middleware, permission matrix, role guards), ML model optimisation (feature
-    engineering from IEC 60076 standards, GridSearchCV tuning, Platt calibration,
-    full validation methodology with held-out test sets and 5-fold CV), two-factor
-    authentication implementation (speakeasy TOTP flow, QR code generation, pre-auth
-    token pattern), React AuthContext design, role-gated routing, and the admin panel.
-    Bob is load-bearing in this submission — the RBAC, 2FA, and ML validation systems
-    would not exist in their current form without it.
+    Bob was used for: full MySQL + Sequelize backend architecture (replacing MongoDB —
+    including Sequelize model definitions, UUID primary keys, bcrypt beforeCreate /
+    beforeUpdate hooks, auto-DB-creation in config/db.js, and the idempotent seed.js
+    seeding system), JWT authentication middleware (protect guard, Bearer token
+    verification), React context architecture (GridContext for centralised
+    asset/ticket/crew state with localStorage persistence, SimulationContext for
+    simulation-mode providers), react-leaflet digital twin map integration (tile layer
+    management, OpenWeatherMap radar overlays, draggable canvas blueprint mode),
+    ML model optimisation (feature engineering from IEC 60076 standards, GridSearchCV
+    tuning, Platt calibration, 5-fold cross-validation methodology), CSV export utility
+    (UTF-8 BOM, auto-escaping, fallback handlers), and the full dark-mode HSL token
+    CSS design system. Bob is load-bearing in this submission — the database layer,
+    RBAC, map integration, and ML validation systems would not exist in their current
+    form without it.
 
   known_limitations:
     - "Telemetry data is physics-simulated — real SCADA/MQTT ingestion not implemented"
     - "No email or SMS alert notifications"
-    - "No JWT refresh token rotation (tokens expire after 8 hours)"
-    - "2FA backup codes not implemented — admin DB reset required if authenticator is lost"
+    - "No JWT refresh token rotation — tokens expire after 24 hours"
+    - "Database credentials are hard-coded in backend/config/db.js — use environment variables for production"
+    - "OpenWeatherMap API key is a public demo key — rate-limited under heavy load"
     - "Dashboard optimised for 1280px+ screens; mobile layout is functional but not polished"
 
   tech_stack:
     frontend:
       - "React 19.2 + Vite 8.3"
+      - "react-leaflet 5 + Leaflet 1.9 (geospatial digital twin map)"
       - "Lucide React icons"
-      - "Custom CSS design system (no Tailwind)"
+      - "Custom dark-mode CSS design system (HSL tokens, glassmorphism)"
     backend:
       - "Node.js + Express 4.21"
-      - "MongoDB 7 + Mongoose 8.9"
-      - "jsonwebtoken 9 + bcryptjs 3"
-      - "speakeasy 2 (TOTP 2FA) + qrcode 1.5"
+      - "MySQL 8 + Sequelize 6 ORM (auto-creates voltguard_db on startup)"
+      - "jsonwebtoken 9 + bcrypt 6"
+      - "child_process.spawn bridge to Python ML inference"
     ml:
       - "Python 3.8+ + scikit-learn"
-      - "Random Forest (GridSearchCV tuned + Platt calibrated)"
+      - "Random Forest Classifier (GridSearchCV tuned + Platt calibrated)"
       - "NumPy + Pandas + joblib"
+      - "Physics-informed feature engineering (IEC 60076 / ISO 10816)"
     ibm:
-      - "IBM Bob AI (development assistant — architecture, code, ML optimisation)"
+      - "IBM Bob AI (primary development assistant — architecture, database migration, ML optimisation, map integration)"
