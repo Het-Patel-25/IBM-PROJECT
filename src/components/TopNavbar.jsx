@@ -3,17 +3,34 @@ import {
   Bell, 
   Clock, 
   BookOpen, 
-  User, 
   Zap,
-  Activity
+  Activity,
+  Shield,
+  ChevronDown,
+  Settings
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
+const ROLE_LABELS = {
+  admin:              'Administrator',
+  department_manager: 'Dept. Manager',
+  employee:           'Field Employee'
+};
+
+const ROLE_COLORS = {
+  admin:              '#dc2626',
+  department_manager: '#d97706',
+  employee:           '#16a34a'
+};
 
 export default function TopNavbar({ 
   onOpenArchitecture, 
   onNavigate, 
-  alertsCount = 4 
+  alertsCount = 4,
+  onOpenProfile
 }) {
-  const [currentTime, setCurrentTime] = useState('March 30, 2026 - 14:32 EST');
+  const { user, can } = useAuth();
+  const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
     const updateTime = () => {
@@ -33,6 +50,8 @@ export default function TopNavbar({
     return () => clearInterval(interval);
   }, []);
 
+  const roleColor = ROLE_COLORS[user?.role] || '#64748b';
+
   return (
     <header className="academic-topbar">
       {/* Brand Header */}
@@ -42,15 +61,15 @@ export default function TopNavbar({
         </div>
         <div>
           <h2 className="topbar-title">GridPulse AI</h2>
-          <p className="topbar-sub">College AI Project • ML Outage Prediction</p>
+          <p className="topbar-sub">Power Grid Monitoring & ML Outage Prediction</p>
         </div>
       </div>
 
-      {/* Simulation Active Pill (Center) */}
+      {/* Center Status Pill */}
       <div className="topbar-center">
         <div className="simulation-status-pill">
           <div className="pulse-dot-blue" />
-          <span>Simulation Active • 25 Grid Assets Monitored • Random Forest ML Model Ready</span>
+          <span>Simulation Active • 25 Grid Assets • RF Calibrated ML Model (97.7% Acc)</span>
         </div>
       </div>
 
@@ -62,11 +81,11 @@ export default function TopNavbar({
           <span>{currentTime}</span>
         </div>
 
-        {/* System Architecture & ML Specs Modal Trigger */}
+        {/* Architecture button */}
         <button 
           className="btn-spec-trigger"
           onClick={onOpenArchitecture}
-          title="View Viva System Architecture and MongoDB Schemas"
+          title="View System Architecture and ML Specs"
         >
           <BookOpen size={15} />
           <span>System Architecture &amp; ML Specs</span>
@@ -82,10 +101,26 @@ export default function TopNavbar({
           {alertsCount > 0 && <span className="topbar-badge">{alertsCount}</span>}
         </button>
 
-        {/* User Avatar */}
-        <div className="topbar-avatar" title="Student Evaluator / Admin">
-          <User size={16} />
-        </div>
+        {/* User Role Badge + Avatar */}
+        {user && (
+          <div className="topbar-user-group">
+            <div
+              className="topbar-role-badge"
+              style={{ background: `${roleColor}18`, color: roleColor, border: `1px solid ${roleColor}40` }}
+            >
+              <Shield size={11} />
+              <span>{ROLE_LABELS[user.role] || user.role}</span>
+            </div>
+            <div
+              className="topbar-avatar"
+              title={`${user.name} — ${ROLE_LABELS[user.role]}`}
+              onClick={onOpenProfile}
+              style={{ cursor: 'pointer' }}
+            >
+              {user.name?.[0]?.toUpperCase() || '?'}
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

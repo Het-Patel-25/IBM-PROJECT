@@ -1,0 +1,107 @@
+name: Validate Submission
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate Submission Structure
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check submission.yaml exists
+        run: |
+          if [ ! -f "submission.yaml" ]; then
+            echo "ERROR: submission.yaml not found"
+            exit 1
+          fi
+          echo "OK: submission.yaml found"
+
+      - name: Validate submission.yaml is valid YAML and required fields present
+        run: |
+          python3 - <<'EOF'
+          import yaml, sys
+
+          with open("submission.yaml", "r") as f:
+              try:
+                  data = yaml.safe_load(f)
+              except yaml.YAMLError as e:
+                  print(f"ERROR: submission.yaml is invalid YAML: {e}")
+                  sys.exit(1)
+
+          errors = []
+
+          # Required team fields
+          team = data.get("team", {})
+          if not team.get("name", "").strip():
+              errors.append("team.name is empty or missing")
+          if not team.get("track", "").strip():
+              errors.append("team.track is empty or missing")
+          lead = team.get("lead", {})
+          if not lead.get("name", "").strip():
+              errors.append("team.lead.name is empty or missing")
+          if not lead.get("email", "").strip():
+              errors.append("team.lead.email is empty or missing")
+
+          # Required submission fields
+          sub = data.get("submission", {})
+          if not sub.get("title", "").strip():
+              errors.append("submission.title is empty or missing")
+          if not sub.get("problem_statement", "").strip():
+              errors.append("submission.problem_statement is empty or missing")
+          if not sub.get("solution_summary", "").strip():
+              errors.append("submission.solution_summary is empty or missing")
+
+          if errors:
+              for e in errors:
+                  print(f"ERROR: {e}")
+              sys.exit(1)
+
+          print("OK: submission.yaml is valid and all required fields are present")
+          EOF
+
+      - name: Check docs/setup-guide.md exists
+        run: |
+          if [ ! -f "docs/setup-guide.md" ]; then
+            echo "ERROR: docs/setup-guide.md not found"
+            exit 1
+          fi
+          echo "OK: docs/setup-guide.md found"
+
+      - name: Check demo/demo-video-link.txt exists
+        run: |
+          if [ ! -f "demo/demo-video-link.txt" ]; then
+            echo "ERROR: demo/demo-video-link.txt not found"
+            exit 1
+          fi
+          echo "OK: demo/demo-video-link.txt found"
+
+      - name: Check README.md is not default template
+        run: |
+          if grep -q "React + Vite" README.md 2>/dev/null; then
+            echo "WARNING: README.md still appears to contain default Vite template content"
+          fi
+          echo "OK: README.md check passed"
+
+      - name: Check no .env files committed
+        run: |
+          if find . -name ".env" -not -path "./.git/*" -not -name ".env.example" | grep -q "."; then
+            echo "ERROR: .env file(s) found in repository — never commit real credentials"
+            find . -name ".env" -not -path "./.git/*" -not -name ".env.example"
+            exit 1
+          fi
+          echo "OK: no .env files committed"
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "=================================="
+          echo "  Submission Validation: PASSED"
+          echo "  GridPulse AI — IBM Bob Hackathon"
+          echo "=================================="

@@ -4,34 +4,34 @@
 import mongoose from 'mongoose';
 
 const maintenanceSchema = new mongoose.Schema({
-  assetId: { 
-    type: String, 
-    required: true 
+  assetId: {
+    type: String,
+    required: true
   },
-  assetName: { 
-    type: String, 
-    default: '' 
+  assetName: {
+    type: String,
+    default: ''
   },
-  problem: { 
-    type: String, 
-    required: true 
+  problem: {
+    type: String,
+    required: true
   },
-  priority: { 
-    type: String, 
+  priority: {
+    type: String,
     required: true,
     enum: ['Low', 'Warning', 'Medium', 'High', 'Critical'],
     default: 'Medium'
   },
-  recommendation: { 
-    type: String, 
-    required: true 
+  recommendation: {
+    type: String,
+    required: true
   },
-  technician: { 
-    type: String, 
-    default: 'Unassigned' 
+  technician: {
+    type: String,
+    default: 'Unassigned'
   },
-  status: { 
-    type: String, 
+  status: {
+    type: String,
     required: true,
     enum: ['Pending', 'Assigned', 'In Progress', 'Completed'],
     default: 'Pending'

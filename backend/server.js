@@ -1,6 +1,5 @@
 // =============================================================================
-// GridPulse AI – Express Backend & MongoDB API
-// Simple, beginner-friendly REST API for power-grid monitoring & failure prediction
+// GridPulse AI – Express Backend & MongoDB API  (v2.5 — RBAC + 2FA)
 // =============================================================================
 
 import express from 'express';
@@ -13,6 +12,8 @@ import { fileURLToPath } from 'url';
 
 import Asset from './models/Asset.js';
 import Maintenance from './models/Maintenance.js';
+import authRouter from './routes/auth.js';
+import { requireAuth, requirePermission, applyAssetScope } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,10 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/gridpu
 app.use(cors());
 app.use(express.json());
 
-// Initial Seed Data for College Demo
+// ─── Auth Routes (public) ──────────────────────────────────────────────────
+app.use('/api/auth', authRouter);
+
+// ─── Initial Seed Data ─────────────────────────────────────────────────────
 const INITIAL_ASSETS_DATA = [
   {
     name: 'Pine Valley Transformer T-01',
@@ -128,67 +132,82 @@ const INITIAL_MAINTENANCE_DATA = [
   }
 ];
 
-// In-Memory Storage Fallback (guarantees zero downtime even if MongoDB service is stopped)
+// In-Memory Storage Fallback
 let isMongoConnected = false;
 let inMemoryAssets = INITIAL_ASSETS_DATA.map((a, i) => ({ ...a, id: `asset-${i + 1}`, _id: `asset-${i + 1}` }));
 let inMemoryMaintenance = INITIAL_MAINTENANCE_DATA.map((m, i) => ({ ...m, id: `maint-${i + 1}`, _id: `maint-${i + 1}` }));
 
-// Connect to MongoDB with timeout
+// In-memory user store (fallback when MongoDB is down)
+let inMemoryUsers = [];
+
+// Connect to MongoDB
 mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 2000 })
   .then(async () => {
     isMongoConnected = true;
-    console.log('✅ Connected to MongoDB successfully at:', MONGODB_URI);
-    
-    // Seed initial assets if empty
+    console.log('✅ Connected to MongoDB at:', MONGODB_URI);
+
     const countAssets = await Asset.countDocuments();
     if (countAssets === 0) {
       await Asset.insertMany(INITIAL_ASSETS_DATA);
-      console.log('🌱 Seeded 5 baseline grid assets into MongoDB.');
+      console.log('🌱 Seeded 5 baseline grid assets.');
     }
 
-    // Seed maintenance records if empty
     const countMaint = await Maintenance.countDocuments();
     if (countMaint === 0) {
       await Maintenance.insertMany(INITIAL_MAINTENANCE_DATA);
-      console.log('🌱 Seeded 4 maintenance records into MongoDB.');
+      console.log('🌱 Seeded 4 maintenance records.');
     }
   })
   .catch((err) => {
     isMongoConnected = false;
-    console.log('ℹ️ MongoDB not connected (local mock store activated). Error:', err.message);
+    console.log('ℹ️  MongoDB not connected — in-memory store active. Error:', err.message);
   });
 
-// -----------------------------------------------------------------------------
-// API Endpoints
-// -----------------------------------------------------------------------------
-
-// Health Check
+// ─── Health Check ──────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'GridPulse AI Backend',
+    version: '2.5',
     database: isMongoConnected ? 'MongoDB Connected' : 'In-Memory Store (Resilient Mode)',
+    rbac: 'enabled',
+    twoFactor: 'enabled',
     timestamp: new Date().toISOString()
   });
 });
 
-// GET /api/assets - Fetch all electrical assets
-app.get('/api/assets', async (req, res) => {
+// ─── GET /api/assets ───────────────────────────────────────────────────────
+// Admin + Manager: all assets | Employee: assigned assets only
+
+app.get('/api/assets', requireAuth, applyAssetScope, async (req, res) => {
   try {
     if (isMongoConnected) {
-      const assets = await Asset.find().sort({ riskScore: -1 });
+      const assets = await Asset.find(req.assetFilter).sort({ riskScore: -1 });
       return res.json(assets);
     }
-    return res.json(inMemoryAssets);
+    // In-memory scope
+    let result = inMemoryAssets;
+    if (req.user.role === 'employee' && req.user.assignedAssets?.length > 0) {
+      result = inMemoryAssets.filter(a => req.user.assignedAssets.includes(a.id));
+    }
+    return res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET /api/assets/:id - Fetch single asset details
-app.get('/api/assets/:id', async (req, res) => {
+// ─── GET /api/assets/:id ───────────────────────────────────────────────────
+app.get('/api/assets/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Employee can only see their assigned assets
+    if (req.user.role === 'employee' &&
+        req.user.assignedAssets?.length > 0 &&
+        !req.user.assignedAssets.includes(id)) {
+      return res.status(403).json({ error: 'You do not have access to this asset.' });
+    }
+
     if (isMongoConnected) {
       const asset = await Asset.findById(id);
       if (asset) return res.json(asset);
@@ -201,8 +220,9 @@ app.get('/api/assets/:id', async (req, res) => {
   }
 });
 
-// POST /api/assets - Add a new asset
-app.post('/api/assets', async (req, res) => {
+// ─── POST /api/assets ─────────────────────────────────────────────────────
+// Admin only
+app.post('/api/assets', requireAuth, requirePermission('canDeleteAssets'), async (req, res) => {
   try {
     const assetData = req.body;
     if (isMongoConnected) {
@@ -219,8 +239,8 @@ app.post('/api/assets', async (req, res) => {
   }
 });
 
-// GET /api/maintenance - Fetch all maintenance tasks
-app.get('/api/maintenance', async (req, res) => {
+// ─── GET /api/maintenance ─────────────────────────────────────────────────
+app.get('/api/maintenance', requireAuth, async (req, res) => {
   try {
     if (isMongoConnected) {
       const records = await Maintenance.find().sort({ createdAt: -1 });
@@ -232,8 +252,9 @@ app.get('/api/maintenance', async (req, res) => {
   }
 });
 
-// POST /api/maintenance - Create new maintenance task
-app.post('/api/maintenance', async (req, res) => {
+// ─── POST /api/maintenance ─────────────────────────────────────────────────
+// Admin + Manager only
+app.post('/api/maintenance', requireAuth, requirePermission('canEditMaintenance'), async (req, res) => {
   try {
     const taskData = req.body;
     if (isMongoConnected) {
@@ -242,12 +263,7 @@ app.post('/api/maintenance', async (req, res) => {
       return res.status(201).json(saved);
     }
     const fakeId = `maint-${Date.now()}`;
-    const newLocalMaint = {
-      ...taskData,
-      id: fakeId,
-      _id: fakeId,
-      createdAt: new Date().toISOString()
-    };
+    const newLocalMaint = { ...taskData, id: fakeId, _id: fakeId, createdAt: new Date().toISOString() };
     inMemoryMaintenance.unshift(newLocalMaint);
     return res.status(201).json(newLocalMaint);
   } catch (err) {
@@ -255,8 +271,8 @@ app.post('/api/maintenance', async (req, res) => {
   }
 });
 
-// PATCH /api/maintenance/:id - Update status / technician
-app.patch('/api/maintenance/:id', async (req, res) => {
+// ─── PATCH /api/maintenance/:id ────────────────────────────────────────────
+app.patch('/api/maintenance/:id', requireAuth, requirePermission('canEditMaintenance'), async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -278,16 +294,15 @@ app.patch('/api/maintenance/:id', async (req, res) => {
   }
 });
 
-// POST /api/predict - Machine Learning Failure Prediction Endpoint
-app.post('/api/predict', (req, res) => {
+// ─── POST /api/predict ─────────────────────────────────────────────────────
+// Admin + Manager only (employees cannot run predictions)
+app.post('/api/predict', requireAuth, requirePermission('canRunPrediction'), (req, res) => {
   const { temperature, load, vibration, humidity, age } = req.body;
 
-  // Validate inputs
   if (temperature === undefined || load === undefined) {
     return res.status(400).json({ error: 'Missing required sensor inputs' });
   }
 
-  // Attempt to call Python ML inference script
   const pythonScript = path.join(__dirname, '..', 'ml', 'predict.py');
   const inputPayload = JSON.stringify({
     temperature: parseFloat(temperature),
@@ -297,7 +312,6 @@ app.post('/api/predict', (req, res) => {
     age: parseFloat(age || 10)
   });
 
-  // Prefer venv python with scikit-learn installed
   const venvPython = path.join(__dirname, '..', 'ml', 'venv', 'bin', 'python3');
   const pythonBin = fs.existsSync(venvPython) ? venvPython : 'python3';
 
@@ -305,25 +319,18 @@ app.post('/api/predict', (req, res) => {
   let scriptOutput = '';
   let scriptError = '';
 
-  pyProcess.stdout.on('data', (data) => {
-    scriptOutput += data.toString();
-  });
-
-  pyProcess.stderr.on('data', (data) => {
-    scriptError += data.toString();
-  });
+  pyProcess.stdout.on('data', (data) => { scriptOutput += data.toString(); });
+  pyProcess.stderr.on('data', (data) => { scriptError += data.toString(); });
 
   pyProcess.on('close', (code) => {
     if (code === 0 && scriptOutput.trim()) {
       try {
         const mlResult = JSON.parse(scriptOutput.trim());
         return res.json(mlResult);
-      } catch (parseErr) {
-        // Fallback to internal scoring below
-      }
+      } catch {}
     }
 
-    // Calibrated ML baseline fallback (identical to trained Random Forest model)
+    // Calibrated fallback
     let score = 15;
     if (temperature > 70) score += (temperature - 70) * 1.6;
     if (temperature > 90) score += 15;
@@ -332,7 +339,6 @@ app.post('/api/predict', (req, res) => {
     if (vibration > 2.5) score += (vibration - 2.5) * 14;
     if (humidity > 70) score += (humidity - 70) * 0.4;
     if (age > 10) score += (age - 10) * 0.8;
-
     score = Math.min(99, Math.max(5, Math.round(score)));
 
     let riskCategory = 'Normal';
@@ -342,11 +348,11 @@ app.post('/api/predict', (req, res) => {
     if (score >= 86) {
       riskCategory = 'Critical';
       possibleFailure = temperature > 85 ? 'Transformer Overheating & Winding Dielectric Breakdown' : 'Severe Mechanical Resonance';
-      recommendation = 'IMMEDIATE ATTENTION REQUIRED: Reduce load, dispatch emergency response team, and inspect cooling pumps.';
+      recommendation = 'IMMEDIATE ATTENTION REQUIRED: Reduce load, dispatch emergency response team.';
     } else if (score >= 71) {
       riskCategory = 'High';
       possibleFailure = 'Thermal Stress & Elevated Mechanical Vibration';
-      recommendation = 'Schedule urgent on-site inspection within 24 hours. Verify oil levels and cooling radiator airflow.';
+      recommendation = 'Schedule urgent on-site inspection within 24 hours.';
     } else if (score >= 41) {
       riskCategory = 'Warning';
       possibleFailure = 'Moderate Thermal Degradation';
@@ -363,7 +369,17 @@ app.post('/api/predict', (req, res) => {
   });
 });
 
-// Start Express Server
+// ─── GET /api/permissions ──────────────────────────────────────────────────
+// Returns the permission matrix for the current user's role
+app.get('/api/permissions', requireAuth, (req, res) => {
+  import('./config/permissions.js').then(({ getPermissions }) => {
+    res.json(getPermissions(req.user.role));
+  });
+});
+
+// Start Server
 app.listen(PORT, () => {
-  console.log(`🚀 GridPulse AI Backend Server listening on port ${PORT}`);
+  console.log(`🚀 GridPulse AI Backend v2.5 listening on port ${PORT}`);
+  console.log(`🔐 RBAC enabled: admin | department_manager | employee`);
+  console.log(`🛡️  2FA (TOTP) authentication: enabled`);
 });

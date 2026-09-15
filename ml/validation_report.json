@@ -1,0 +1,41 @@
+{
+  "model_name": "Random Forest (tuned, calibrated)",
+  "dataset_samples": 1500,
+  "feature_cols": [
+    "temperature",
+    "load",
+    "vibration",
+    "humidity",
+    "age",
+    "thermal_load_idx",
+    "mech_health",
+    "moisture_age",
+    "overload_flag"
+  ],
+  "split": {
+    "train": 900,
+    "val": 300,
+    "test": 300
+  },
+  "validation_metrics": {
+    "accuracy_pct": 96.67,
+    "precision": 0.9362,
+    "recall": 0.8627,
+    "f1_score": 0.898,
+    "roc_auc": 0.9962,
+    "avg_precision": 0.9834,
+    "mcc": 0.8791,
+    "confusion_matrix": {
+      "tn": 246,
+      "fp": 3,
+      "fn": 7,
+      "tp": 44
+    }
+  },
+  "cross_validation": {
+    "folds": 5,
+    "mean_f1": 0.9319,
+    "std_f1": 0.0055,
+    "mean_accuracy_pct": 97.73
+  }
+}
