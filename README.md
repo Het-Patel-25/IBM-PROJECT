@@ -18,7 +18,7 @@
 | **Team Name** | **Team Syntax** |
 | **Track** | AI |
 | **Lead** | Krish kaneria (`krishkaneria9@gmail.com`) |
-| **Members** | Het Patel (`het.patel@gridpulse.ai`) |
+| **Members** | Het Patel |
 | **Repository** | [github.com/Het-Patel-25/IBM-PROJECT](https://github.com/Het-Patel-25/IBM-PROJECT) |
 
 ---
