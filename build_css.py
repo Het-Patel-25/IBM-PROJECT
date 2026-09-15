@@ -460,6 +460,8 @@ h4, .text-h4 { font-size: 1rem; font-weight: 600; color: var(--gray-900); }
 }
 """
 
-with open(r"c:\Users\krish\OneDrive\Desktop\IBM-PROJECT-main\IBM-PROJECT-main\src\index.css", "w") as f:
+target_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "index.css")
+with open(target_path, "w", encoding="utf-8") as f:
     f.write(css_content)
 print("index.css fully rebuilt with enterprise design system.")
+
