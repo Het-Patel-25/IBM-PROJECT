@@ -1,22 +1,12 @@
 # Demo Screenshots
 
-Place application screenshots in this directory, named sequentially:
+High-resolution application screenshots for **GridSentinel AI**:
 
-```
-01-login-page.png              — Login page with GridPulse AI branding
-02-signup-role-selector.png    — Signup page showing role selection cards
-03-2fa-setup-qr.png           — 2FA setup modal with QR code
-04-dashboard-overview.png     — Main dashboard with asset risk cards
-05-ai-prediction-studio.png   — AI Prediction Studio with sensor inputs + result
-06-asset-monitoring.png       — Asset monitoring with telemetry charts
-07-maintenance-orders.png     — Maintenance work orders list
-08-admin-user-panel.png       — Admin panel user management table
-09-risk-analysis.png          — Risk analysis severity ranking matrix
-```
-
-## Screenshot Requirements (per hackathon guide)
-
-- At least 3 screenshots required
-- Show the application actually running
-- Name files sequentially (01-, 02-, 03-, …)
-- Accepted formats: .png, .jpg, .gif, .webp
+| # | File | Description |
+|---|---|---|
+| 01 | [`01-login-page.png`](01-login-page.png) | Login page with GridSentinel custom symbol, telemetry status, and 1-click role logins |
+| 02 | [`02-dashboard-overview.png`](02-dashboard-overview.png) | Overview Dashboard with fleet metrics, critical assets, weather risk zones, and audit log |
+| 03 | [`03-project-map-blueprint.png`](03-project-map-blueprint.png) | Digital Twin Substation Operational Blueprint & AI Weather-Risk Alert |
+| 04 | [`04-ai-remediation-plan.png`](04-ai-remediation-plan.png) | AI Remediation Plan with 99% failure risk breakdown and recommended actions |
+| 05 | [`05-add-asset-modal.png`](05-add-asset-modal.png) | Add New Asset multi-step modal with sensor thresholds and telemetry binding |
+| 06 | [`06-asset-registry-csv-export.png`](06-asset-registry-csv-export.png) | Asset Registry fleet table with verified real-time CSV spreadsheet export |

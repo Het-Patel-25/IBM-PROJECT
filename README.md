@@ -31,6 +31,27 @@ Combining real-time IoT sensor telemetry, Dissolved Gas Analysis (DGA), AI risk 
 
 ---
 
+## 🎬 Project Deliverables
+
+| Deliverable | Format | Access / Direct Link | Description |
+|---|---|---|---|
+| 🎥 **Video Demo** | Video Walkthrough | [**Watch Video on Google Drive**](https://drive.google.com/file/d/1rtmvM_DhnBSR7Lp-Rpp-pmLvf9YZi222/view?usp=sharing) | Full end-to-end demonstration of GridSentinel AI, live sensor telemetry, DGA, digital twin map, and maintenance dispatch |
+| 📊 **Presentation** | PPTX Slide Deck | [**presentation/slides.pptx**](presentation/slides.pptx) <br> *(Source: [`presentation/IBM-BOB-PRESENTATION.pptx`](presentation/IBM-BOB-PRESENTATION.pptx))* | Hackathon pitch deck covering problem scope, system architecture, ML models, and market impact |
+| 📸 **Screenshots** | High-Res Gallery | [**demo/screenshots/**](demo/screenshots/) <br> *(Local folder: [`screenshots/`](screenshots/))* | High-resolution UI screenshots of the running system and workflow |
+
+### 📸 Application Screenshot Navigation
+
+| # | Screen | Link | Description |
+|:---:|---|---|---|
+| **01** | **Login Experience** | [`01-login-page.png`](demo/screenshots/01-login-page.png) | High-tech auth with GridSentinel vector emblem & 1-click role logins |
+| **02** | **Executive Dashboard** | [`02-dashboard-overview.png`](demo/screenshots/02-dashboard-overview.png) | Real-time fleet KPI metrics, critical assets, and automated audit trail |
+| **03** | **Project Map & Blueprint** | [`03-project-map-blueprint.png`](demo/screenshots/03-project-map-blueprint.png) | Substation Alpha operational blueprint with AI weather risk alerts |
+| **04** | **AI Remediation Plan** | [`04-ai-remediation-plan.png`](demo/screenshots/04-ai-remediation-plan.png) | 99% risk breakdown, failure contributors & direct work-order creation |
+| **05** | **Add Asset Workflow** | [`05-add-asset-modal.png`](demo/screenshots/05-add-asset-modal.png) | Modal workflow for registering and configuring grid infrastructure |
+| **06** | **Live CSV Export** | [`06-asset-registry-csv-export.png`](demo/screenshots/06-asset-registry-csv-export.png) | Asset registry with verified live CSV spreadsheet export download |
+
+---
+
 ## 🎯 Key Features & Modules
 
 ### 1. 🛡️ Operational Command Dashboard
