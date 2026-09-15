@@ -34,9 +34,9 @@
 
 | Field | Detail |
 |---|---|
-| **Team Name** | Het Patel |
+| **Team Name** | Team Syntax |
 | **Track** | AI |
-| **Lead** | Het Patel |
+| **Lead** | Krish kaneria |
 | **Repository** | [github.com/Het-Patel-25/IBM-PROJECT](https://github.com/Het-Patel-25/IBM-PROJECT) |
 
 ---
