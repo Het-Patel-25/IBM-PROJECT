@@ -1,0 +1,78 @@
+team:
+  name: "Team Syntax"
+  track: "AI"
+  lead:
+    name: "Krish kaneria"
+    email: "krishkaneria9@gmail.com"
+  members:
+    - name: "Krish kaneria"
+      email: "krishkaneria9@gmail.com"
+    - name: "Het Patel"
+      email: "het.patel@gridpulse.ai"
+
+submission:
+  title: "GridPulse AI — Power Grid Failure Prediction & Monitoring System"
+  problem_statement: >
+    Electrical utility companies operate hundreds of transformers and feeder assets
+    across wide geographic areas. Failures are rarely sudden — they develop through
+    measurable sensor signals (temperature, vibration, load, humidity, age). However,
+    reactive maintenance is the industry default: teams wait for failures and scramble
+    with emergency repairs costing 3-5x more than planned work. Simultaneously,
+    sensitive operational data (risk predictions, failure probabilities) is accessible
+    to all staff regardless of role, creating security and compliance risks. No existing
+    college-level tool combines AI-driven failure prediction with enterprise-grade RBAC
+    and two-factor authentication for critical infrastructure.
+  solution_summary: >
+    GridPulse AI is a full-stack AI-powered power grid monitoring and predictive
+    maintenance platform. It uses a calibrated Random Forest ML model trained on
+    physics-informed telemetry data (IEC 60076 / ISO 10816 standards) to predict
+    asset failures before they occur, achieving 97.73% cross-validated accuracy and
+    ROC-AUC of 0.9962. The platform enforces three-tier role-based access control
+    (Admin, Department Manager, Field Employee) with JWT authentication and TOTP
+    two-factor authentication via speakeasy, ensuring only authorised personnel access
+    critical grid operational data. IBM Bob AI was used throughout development for
+    architecture design, RBAC implementation, ML optimisation, and code generation.
+  key_features:
+    - "AI Failure Prediction Studio: 5 sensor inputs → failure probability, risk category, recommended action"
+    - "Calibrated Random Forest ML: 97.73% CV accuracy, ROC-AUC 0.9962, physics-informed feature engineering"
+    - "3-tier RBAC: Admin / Department Manager / Employee, enforced at API middleware and React UI level"
+    - "JWT + TOTP two-factor authentication (speakeasy, Google Authenticator compatible, QR code in-app setup)"
+    - "Admin user management panel: role assignment, department scoping, account activation, 2FA status"
+    - "Real-time asset telemetry dashboards: DGA, PRPD scatter, FFT harmonics, thermal curve modelling"
+    - "Maintenance work order lifecycle: AI-generated tickets, technician assignment, status tracking"
+    - "Resilient architecture: in-memory fallback (no MongoDB required), formula fallback (no Python required)"
+
+  ibm_bob_integration: >
+    IBM Bob AI was the primary development assistant throughout the entire project.
+    Bob was used for: full RBAC system architecture and implementation (User model,
+    JWT middleware, permission matrix, role guards), ML model optimisation (feature
+    engineering from IEC 60076 standards, GridSearchCV tuning, Platt calibration,
+    full validation methodology with held-out test sets and 5-fold CV), two-factor
+    authentication implementation (speakeasy TOTP flow, QR code generation, pre-auth
+    token pattern), React AuthContext design, role-gated routing, and the admin panel.
+    Bob is load-bearing in this submission — the RBAC, 2FA, and ML validation systems
+    would not exist in their current form without it.
+
+  known_limitations:
+    - "Telemetry data is physics-simulated — real SCADA/MQTT ingestion not implemented"
+    - "No email or SMS alert notifications"
+    - "No JWT refresh token rotation (tokens expire after 8 hours)"
+    - "2FA backup codes not implemented — admin DB reset required if authenticator is lost"
+    - "Dashboard optimised for 1280px+ screens; mobile layout is functional but not polished"
+
+  tech_stack:
+    frontend:
+      - "React 19.2 + Vite 8.3"
+      - "Lucide React icons"
+      - "Custom CSS design system (no Tailwind)"
+    backend:
+      - "Node.js + Express 4.21"
+      - "MongoDB 7 + Mongoose 8.9"
+      - "jsonwebtoken 9 + bcryptjs 3"
+      - "speakeasy 2 (TOTP 2FA) + qrcode 1.5"
+    ml:
+      - "Python 3.8+ + scikit-learn"
+      - "Random Forest (GridSearchCV tuned + Platt calibrated)"
+      - "NumPy + Pandas + joblib"
+    ibm:
+      - "IBM Bob AI (development assistant — architecture, code, ML optimisation)"

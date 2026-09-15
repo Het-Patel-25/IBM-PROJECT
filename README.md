@@ -1,6 +1,25 @@
 # GridSentinel AI ⚡🛡️
 ### Intelligent Power Grid Asset Monitoring & Failure Prediction System
-> **IBM Project / Hackathon Initiative** — Real-time sensor telemetry, AI-driven failure prediction, Duval Gas Analysis, and closed-loop maintenance dispatch for mission-critical electrical infrastructure.
+> **IBM Bob AI Hackathon Submission** · Team: **Team Syntax** · Track: **AI**
+
+[![Validate Submission](https://github.com/Het-Patel-25/IBM-PROJECT/actions/workflows/validate.yml/badge.svg)](https://github.com/Het-Patel-25/IBM-PROJECT/actions/workflows/validate.yml)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?logo=vite)
+![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js)
+![Python](https://img.shields.io/badge/Python-scikit--learn-3776AB?logo=python)
+![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97.73%25-success)
+
+---
+
+## 👥 Team
+
+| Field | Detail |
+|---|---|
+| **Team Name** | **Team Syntax** |
+| **Track** | AI |
+| **Lead** | Krish kaneria (`krishkaneria9@gmail.com`) |
+| **Members** | Het Patel (`het.patel@gridpulse.ai`) |
+| **Repository** | [github.com/Het-Patel-25/IBM-PROJECT](https://github.com/Het-Patel-25/IBM-PROJECT) |
 
 ---
 
